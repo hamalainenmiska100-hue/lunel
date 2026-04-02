@@ -3307,6 +3307,43 @@ function displayQR(code: string): void {
   });
 }
 
+function supportsAnsiStyles(): boolean {
+  if (!process.stdout.isTTY) return false;
+  if (process.env.NO_COLOR) return false;
+  if (process.env.FORCE_COLOR) return true;
+  if (process.platform !== "win32") return true;
+
+  return Boolean(
+    process.env.WT_SESSION ||
+    process.env.ANSICON ||
+    process.env.ConEmuANSI === "ON" ||
+    process.env.TERM_PROGRAM ||
+    process.env.TERM === "xterm-256color",
+  );
+}
+
+function displaySavedSessionNotice(): void {
+  const useAnsiStyles = supportsAnsiStyles();
+  const red = useAnsiStyles ? "\x1b[31m" : "";
+  const bold = useAnsiStyles ? "\x1b[1m" : "";
+  const reset = useAnsiStyles ? "\x1b[0m" : "";
+  const lines = [
+    "NOTE: You're using an existing session.",
+    "You can open it from the app via Past Sessions and select this session.",
+    "If you want a new QR code for pairing, run: npx lunel-cli -n",
+  ];
+  const width = Math.max(...lines.map((line) => line.length));
+  const border = `+${"-".repeat(width + 2)}+`;
+
+  console.log("");
+  console.log(`${red}${border}${reset}`);
+  for (const line of lines) {
+    console.log(`${red}|${reset} ${bold}${line.padEnd(width, " ")}${reset} ${red}|${reset}`);
+  }
+  console.log(`${red}${border}${reset}`);
+  console.log("");
+}
+
 function gracefulShutdown(): void {
   shuttingDown = true;
   console.log("\nShutting down...");
@@ -3505,6 +3542,7 @@ async function main(): Promise<void> {
 
     if (!FORCE_NEW_CODE && savedSession) {
       console.log(`Using saved session for ${ROOT_DIR}`);
+      displaySavedSessionNotice();
       sessionCodeToUse = savedSession.sessionCode;
       sessionPasswordToUse = savedSession.sessionPassword;
       usedSavedSession = true;
