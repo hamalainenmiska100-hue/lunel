@@ -2581,7 +2581,7 @@ export default function BrowserPanel({ bottomBarHeight }: PluginPanelProps) {
                 />
               </View>
             ) : activeDevsoleSection === "network" ? (
-              <View style={{ flex: 1, padding: 10 }}>
+              <View style={{ flex: 1 }}>
                 <NetworkSection
                   entries={activeNetworkEntries}
                   onClear={clearActiveNetwork}

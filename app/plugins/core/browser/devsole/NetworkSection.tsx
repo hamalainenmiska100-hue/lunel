@@ -1,7 +1,7 @@
 import { FlashList } from "@shopify/flash-list";
 import * as Clipboard from "expo-clipboard";
 import { useTheme } from "@/contexts/ThemeContext";
-import { Copy, Search, Trash2, X } from "lucide-react-native";
+import { Copy, Network, Search, Trash2, X } from "lucide-react-native";
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Modal, Pressable, ScrollView, Text, TextInput, TouchableOpacity, View, useWindowDimensions } from "react-native";
 import Animated, { Easing, runOnJS, useAnimatedStyle, useSharedValue, withTiming } from "react-native-reanimated";
@@ -53,35 +53,49 @@ const NetworkRow = memo(function NetworkRow({
       onPress={onPress}
       activeOpacity={0.85}
       style={{
-        paddingVertical: 6,
-        paddingHorizontal: 6,
-        gap: 4,
+        paddingVertical: 8,
+        paddingHorizontal: 8,
+        gap: 5,
         borderRadius: radius.md,
         backgroundColor: expanded ? colors.bg.raised : "transparent",
       }}
     >
-      <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexWrap: "wrap" }}>
-        <Text style={{ color: colors.accent.default, fontSize: 9, fontFamily: fonts.mono.medium }}>
-          {item.method}
-        </Text>
-        <Text style={{ color: statusColor, fontSize: 9, fontFamily: fonts.sans.semibold }}>
-          {item.status == null ? "..." : String(item.status)}
-        </Text>
+      <View style={{ flexDirection: "row", alignItems: "center", gap: 5 }}>
+        <View style={{
+          paddingHorizontal: 5,
+          paddingVertical: 2,
+          borderRadius: 4,
+          backgroundColor: colors.accent.default + "18",
+        }}>
+          <Text style={{ color: colors.accent.default, fontSize: 9, fontFamily: fonts.sans.semibold }}>
+            {item.method}
+          </Text>
+        </View>
+        <View style={{
+          paddingHorizontal: 5,
+          paddingVertical: 2,
+          borderRadius: 4,
+          backgroundColor: statusColor + "18",
+        }}>
+          <Text style={{ color: statusColor, fontSize: 9, fontFamily: fonts.sans.semibold }}>
+            {item.status == null ? "···" : String(item.status)}
+          </Text>
+        </View>
         <Text style={{ color: colors.fg.subtle, fontSize: 9, fontFamily: fonts.sans.medium }}>
           {item.type || "unknown"}
         </Text>
-        <Text style={{ color: colors.fg.subtle, fontSize: 9, fontFamily: fonts.mono.regular }}>
+        <Text style={{ color: colors.fg.subtle, fontSize: 9, fontFamily: fonts.sans.regular, marginLeft: "auto" }}>
           {formatDuration(item.durationMs)}
         </Text>
       </View>
 
       <Text
-        numberOfLines={expanded ? 3 : 1}
+        numberOfLines={expanded ? 2 : 1}
         style={{
           color: colors.fg.default,
           fontSize: 11,
           lineHeight: 15,
-          fontFamily: fonts.mono.regular,
+          fontFamily: fonts.sans.medium,
         }}
       >
         {compactUrl(item.url)}
@@ -92,8 +106,8 @@ const NetworkRow = memo(function NetworkRow({
           numberOfLines={1}
           style={{
             color: '#ef4444',
-            fontSize: 9,
-            fontFamily: fonts.sans.medium,
+            fontSize: 10,
+            fontFamily: fonts.sans.regular,
           }}
         >
           {item.error}
@@ -104,10 +118,10 @@ const NetworkRow = memo(function NetworkRow({
         <View style={{ gap: 6, paddingTop: 2 }}>
           <Text
             style={{
-              color: colors.fg.default,
+              color: colors.fg.muted,
               fontSize: 10,
               lineHeight: 14,
-              fontFamily: fonts.mono.regular,
+              fontFamily: fonts.sans.regular,
             }}
           >
             {item.url}
@@ -120,27 +134,13 @@ const NetworkRow = memo(function NetworkRow({
                 paddingVertical: 8,
                 borderRadius: radius.md,
                 backgroundColor: colors.bg.base,
+                gap: 4,
               }}
             >
-              <Text
-                style={{
-                  color: colors.fg.subtle,
-                  fontSize: 8,
-                  fontFamily: fonts.sans.medium,
-                  textTransform: "uppercase",
-                }}
-              >
-                request
+              <Text style={{ color: colors.fg.subtle, fontSize: 9, fontFamily: fonts.sans.semibold, textTransform: "uppercase", letterSpacing: 0.4 }}>
+                Request
               </Text>
-              <Text
-                style={{
-                  color: colors.fg.default,
-                  fontSize: 10,
-                  lineHeight: 14,
-                  fontFamily: fonts.mono.regular,
-                  marginTop: 3,
-                }}
-              >
+              <Text style={{ color: colors.fg.default, fontSize: 10, lineHeight: 15, fontFamily: fonts.sans.regular }}>
                 {item.requestBody}
               </Text>
             </View>
@@ -153,27 +153,15 @@ const NetworkRow = memo(function NetworkRow({
                 paddingVertical: 8,
                 borderRadius: radius.md,
                 backgroundColor: colors.bg.base,
+                gap: 4,
               }}
             >
-              <Text
-                style={{
-                  color: colors.fg.subtle,
-                  fontSize: 8,
-                  fontFamily: fonts.sans.medium,
-                  textTransform: "uppercase",
-                }}
-              >
-                response
+              <Text style={{ color: colors.fg.subtle, fontSize: 9, fontFamily: fonts.sans.semibold, textTransform: "uppercase", letterSpacing: 0.4 }}>
+                Response
               </Text>
               <Text
                 numberOfLines={6}
-                style={{
-                  color: colors.fg.muted,
-                  fontSize: 10,
-                  lineHeight: 14,
-                  fontFamily: fonts.mono.regular,
-                  marginTop: 3,
-                }}
+                style={{ color: colors.fg.muted, fontSize: 10, lineHeight: 15, fontFamily: fonts.sans.regular }}
               >
                 {item.responsePreview}
               </Text>
@@ -181,16 +169,10 @@ const NetworkRow = memo(function NetworkRow({
                 <TouchableOpacity
                   onPress={onReadAllResponse}
                   activeOpacity={0.85}
-                  style={{ marginTop: 6, alignSelf: "flex-start" }}
+                  style={{ marginTop: 2, alignSelf: "flex-start" }}
                 >
-                  <Text
-                    style={{
-                      color: colors.accent.default,
-                      fontSize: 10,
-                      fontFamily: fonts.sans.medium,
-                    }}
-                  >
-                    Read all response
+                  <Text style={{ color: colors.accent.default, fontSize: 10, fontFamily: fonts.sans.medium }}>
+                    Read full response
                   </Text>
                 </TouchableOpacity>
               ) : null}
@@ -198,16 +180,20 @@ const NetworkRow = memo(function NetworkRow({
           ) : null}
 
           {item.error ? (
-            <Text
-              style={{
-                color: '#ef4444',
-                fontSize: 10,
-                lineHeight: 14,
-                fontFamily: fonts.mono.regular,
-              }}
-            >
-              {item.error}
-            </Text>
+            <View style={{
+              paddingHorizontal: 10,
+              paddingVertical: 8,
+              borderRadius: radius.md,
+              backgroundColor: '#ef444412',
+              gap: 4,
+            }}>
+              <Text style={{ color: '#ef4444', fontSize: 9, fontFamily: fonts.sans.semibold, textTransform: "uppercase", letterSpacing: 0.4 }}>
+                Error
+              </Text>
+              <Text style={{ color: '#ef4444', fontSize: 10, lineHeight: 15, fontFamily: fonts.sans.regular }}>
+                {item.error}
+              </Text>
+            </View>
           ) : null}
         </View>
       ) : null}
@@ -380,8 +366,8 @@ function ResponseSheet({
               style={{
                 color: colors.fg.muted,
                 fontSize: 11,
-                lineHeight: 16,
-                fontFamily: fonts.mono.regular,
+                lineHeight: 17,
+                fontFamily: fonts.sans.regular,
               }}
             >
               {entry?.responseBody || ""}
@@ -447,11 +433,16 @@ export default function NetworkSection({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
+          paddingHorizontal: 8,
+          paddingVertical: 4,
+          backgroundColor: colors.bg.raised,
+          borderBottomWidth: 0.5,
+          borderBottomColor: colors.border.secondary,
         }}
       >
-        <View style={{ flex: 1, flexDirection: "row", alignItems: "center", gap: 6 }}>
+        <View style={{ flex: 1 }} />
+
+        <View style={{ flexDirection: "row", gap: 4, marginLeft: 6 }}>
           <TouchableOpacity
             onPress={() => setSearchOpen((current) => !current)}
             activeOpacity={0.85}
@@ -461,64 +452,66 @@ export default function NetworkSection({
               alignItems: "center",
               justifyContent: "center",
               borderRadius: radius.full,
-              backgroundColor: searchOpen ? colors.accent.default : colors.bg.raised,
-              borderWidth: searchOpen ? 0 : 1,
-              borderColor: colors.bg.raised,
+              backgroundColor: searchOpen ? colors.accent.default : colors.bg.base,
+              borderWidth: 0.5,
+              borderColor: searchOpen ? colors.accent.default : colors.border.secondary,
             }}
           >
-            <Search size={13} color={searchOpen ? '#ffffff' : colors.fg.default} strokeWidth={2} />
+            <Search size={14} color={searchOpen ? '#ffffff' : colors.fg.default} strokeWidth={2} />
+          </TouchableOpacity>
+
+          <TouchableOpacity
+            onPress={onClear}
+            style={{
+              width: 28,
+              height: 28,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: radius.full,
+              backgroundColor: colors.bg.base,
+              borderWidth: 0.5,
+              borderColor: colors.border.secondary,
+            }}
+          >
+            <Trash2 size={14} color={colors.fg.default} strokeWidth={2} />
           </TouchableOpacity>
         </View>
-
-        <TouchableOpacity
-          onPress={onClear}
-          style={{
-            width: 28,
-            height: 28,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: radius.full,
-            backgroundColor: colors.bg.raised,
-            borderWidth: 1,
-            borderColor: colors.bg.raised,
-          }}
-        >
-          <Trash2 size={13} color={colors.fg.default} strokeWidth={2} />
-        </TouchableOpacity>
       </View>
 
       {searchOpen ? (
-        <View
-          style={{
-            minHeight: 32,
-            paddingHorizontal: 10,
-            backgroundColor: colors.bg.raised,
-            borderRadius: radius.full,
-            borderWidth: 1,
-            borderColor: colors.bg.raised,
-            justifyContent: "center",
-          }}
-        >
-          <TextInput
-            ref={searchInputRef}
-            value={searchQuery}
-            onChangeText={setSearchQuery}
-            placeholder="Search requests"
-            placeholderTextColor={colors.fg.subtle}
+        <View style={{ paddingHorizontal: 10 }}>
+          <View
             style={{
-              color: colors.fg.default,
-              fontSize: 11,
-              fontFamily: fonts.mono.regular,
-              paddingVertical: 0,
+              minHeight: 32,
+              paddingHorizontal: 10,
+              backgroundColor: colors.bg.raised,
+              borderRadius: 8,
+              borderWidth: 0.5,
+              borderColor: colors.border.secondary,
+              justifyContent: "center",
             }}
-            autoCapitalize="none"
-            autoCorrect={false}
-            returnKeyType="search"
-          />
+          >
+            <TextInput
+              ref={searchInputRef}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+              placeholder="Search requests"
+              placeholderTextColor={colors.fg.subtle}
+              style={{
+                color: colors.fg.default,
+                fontSize: 11,
+                fontFamily: fonts.mono.regular,
+                paddingVertical: 0,
+              }}
+              autoCapitalize="none"
+              autoCorrect={false}
+              returnKeyType="search"
+            />
+          </View>
         </View>
       ) : null}
 
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, paddingHorizontal: 10 }}>
         {filteredEntries.length === 0 ? (
           <View
             style={{
@@ -527,9 +520,11 @@ export default function NetworkSection({
               alignItems: "center",
               justifyContent: "center",
               paddingHorizontal: 20,
+              marginBottom: 46,
               gap: 10,
             }}
           >
+            <Network size={35} color={colors.fg.muted} strokeWidth={1.4} />
             <Text style={{ color: colors.fg.default, fontSize: 14, fontFamily: fonts.sans.semibold }}>
               No network events yet
             </Text>

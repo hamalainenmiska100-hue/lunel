@@ -340,7 +340,7 @@ export default function ConsoleSection({
               borderColor: colors.border.secondary,
             }}
           >
-            <Trash2 size={13} color={colors.fg.default} strokeWidth={2} />
+            <Trash2 size={14} color={colors.fg.default} strokeWidth={2} />
           </TouchableOpacity>
         </View>
       </View>
@@ -403,7 +403,7 @@ export default function ConsoleSection({
                 fontFamily: fonts.sans.regular,
               }}
             >
-              Logs, errors, and unhandled promise rejections from the active page will appear here.
+              Logs and errors from the active page will appear here.
             </Text>
           </View>
         ) : (

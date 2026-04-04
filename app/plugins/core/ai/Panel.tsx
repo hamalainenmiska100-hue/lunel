@@ -2649,6 +2649,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
   }, [activeTab, closeTab]);
 
   const hasContent = listData.length > 0;
+  const messagesBottomInset = isVoiceMode ? 72 : composerHeight + 16;
 
   useEffect(() => {
     // Include backend on each session item so DrawerContent can group them
@@ -2823,7 +2824,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
                 contentContainerStyle={{
                   paddingHorizontal: 16,
                   paddingTop: headerHeight + 18,
-                  paddingBottom: composerHeight + 16,
+                  paddingBottom: messagesBottomInset,
                 }}
                 onContentSizeChange={(_, contentHeight) => {
                   contentHeightRef.current = contentHeight;
