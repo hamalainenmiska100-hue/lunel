@@ -953,7 +953,7 @@ const TerminalToolbar = memo(
           <View
             style={{
               backgroundColor: colors.bg.raised,
-              borderRadius: 9999,
+              borderRadius: 10,
               borderWidth: StyleSheet.hairlineWidth,
               borderColor: colors.fg.disabled,
               shadowColor: "#000",
@@ -961,18 +961,19 @@ const TerminalToolbar = memo(
               shadowOpacity: 0.08,
               shadowRadius: 10,
               elevation: 3,
-              paddingHorizontal: 7,
+              paddingHorizontal: 6,
+              paddingVertical: 4,
               flexDirection: "row",
               alignItems: "center",
-              minHeight: 52,
+              minHeight: 44,
             }}
           >
             {/* Cancel */}
             <TouchableOpacity
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 9999,
+                width: 32,
+                height: 32,
+                borderRadius: 8,
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: colors.bg.base,
@@ -980,18 +981,18 @@ const TerminalToolbar = memo(
               onPress={onCancelMicInput}
               activeOpacity={0.7}
             >
-              <X size={18} color={colors.fg.default} />
+              <X size={16} color={colors.fg.default} />
             </TouchableOpacity>
 
             {/* Waveform */}
             <View
               style={{
                 flex: 1,
-                height: 40,
+                height: 32,
                 flexDirection: "row",
                 alignItems: "center",
                 justifyContent: "space-between",
-                paddingHorizontal: 8,
+                paddingHorizontal: 6,
                 gap: 2,
               }}
             >
@@ -1020,9 +1021,9 @@ const TerminalToolbar = memo(
             {/* Send */}
             <TouchableOpacity
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: 9999,
+                width: 32,
+                height: 32,
+                borderRadius: 8,
                 alignItems: "center",
                 justifyContent: "center",
                 backgroundColor: colors.accent.default,
@@ -1036,7 +1037,7 @@ const TerminalToolbar = memo(
               {micInputLoading ? (
                 <ActivityIndicator size="small" color={'#ffffff'} />
               ) : (
-                <Check size={22} color={'#ffffff'} strokeWidth={2.5} />
+                <Check size={18} color={'#ffffff'} strokeWidth={2.5} />
               )}
             </TouchableOpacity>
           </View>

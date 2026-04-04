@@ -2459,14 +2459,13 @@ export default function BrowserPanel({ bottomBarHeight }: PluginPanelProps) {
             style={[
               {
                 position: "absolute",
-                left: 8,
-                right: 8,
-                bottom: 8,
+                left: 0,
+                right: 0,
+                bottom: 0,
                 zIndex: 20,
                 minHeight: 280,
                 backgroundColor: colors.bg.base,
-                borderRadius: radius.xl,
-                borderWidth: 1,
+                borderTopWidth: 1,
                 borderColor: colors.border.secondary,
                 overflow: "hidden",
               },
@@ -2475,28 +2474,20 @@ export default function BrowserPanel({ bottomBarHeight }: PluginPanelProps) {
           >
             <View
               style={{
-                paddingHorizontal: 12,
-                paddingTop: 10,
-                paddingBottom: 10,
-                borderBottomWidth: StyleSheet.hairlineWidth,
+                flexDirection: "row",
+                alignItems: "center",
+                paddingHorizontal: 8,
+                borderBottomWidth: 0.5,
                 borderBottomColor: colors.border.secondary,
                 backgroundColor: colors.bg.raised,
               }}
             >
-              <View
-                style={{
-                  flexDirection: "row",
-                  alignItems: "center",
-                  gap: 8,
-                }}
+              <ScrollView
+                horizontal
+                showsHorizontalScrollIndicator={false}
+                style={{ flex: 1 }}
+                contentContainerStyle={{ flexDirection: "row" }}
               >
-                <ScrollView
-                  horizontal
-                  showsHorizontalScrollIndicator={false}
-                  style={{ flex: 1 }}
-                  contentContainerStyle={{ gap: 6, paddingRight: 4 }}
-                >
-                  <View style={{ flexDirection: "row", gap: 6 }}>
                   {DEVSOLE_SECTIONS.map((section) => {
                     const isActive = section.id === activeDevsoleSection;
 
@@ -2518,17 +2509,18 @@ export default function BrowserPanel({ bottomBarHeight }: PluginPanelProps) {
                         }
                         activeOpacity={0.85}
                         style={{
-                          paddingHorizontal: 10,
-                          paddingVertical: 7,
-                          borderRadius: radius.full,
-                          backgroundColor: isActive ? colors.accent.default : colors.bg.base,
-                          borderWidth: 1,
-                          borderColor: isActive ? colors.accent.default : colors.border.secondary,
+                          paddingHorizontal: 8,
+                          paddingTop: 10,
+                          paddingBottom: 10,
+                          marginRight: 4,
+                          borderBottomWidth: 2,
+                          borderBottomColor: isActive ? colors.fg.muted : 'transparent',
+                          marginBottom: -0.5,
                         }}
                       >
                         <Text
                           style={{
-                            color: isActive ? '#ffffff' : colors.fg.default,
+                            color: isActive ? colors.fg.default : colors.fg.muted,
                             fontSize: 11,
                             fontFamily: isActive ? fonts.sans.semibold : fonts.sans.medium,
                           }}
@@ -2538,9 +2530,9 @@ export default function BrowserPanel({ bottomBarHeight }: PluginPanelProps) {
                       </TouchableOpacity>
                     );
                   })}
-                  </View>
-                </ScrollView>
+              </ScrollView>
 
+              <View style={{ flexDirection: "row", gap: 4, marginLeft: 6 }}>
                 <TouchableOpacity
                   onPress={toggleDevsoleExpanded}
                   style={{
@@ -2550,7 +2542,7 @@ export default function BrowserPanel({ bottomBarHeight }: PluginPanelProps) {
                     justifyContent: "center",
                     borderRadius: radius.full,
                     backgroundColor: colors.bg.base,
-                    borderWidth: 1,
+                    borderWidth: 0.5,
                     borderColor: colors.border.secondary,
                   }}
                 >
@@ -2570,17 +2562,17 @@ export default function BrowserPanel({ bottomBarHeight }: PluginPanelProps) {
                     justifyContent: "center",
                     borderRadius: radius.full,
                     backgroundColor: colors.bg.base,
-                    borderWidth: 1,
+                    borderWidth: 0.5,
                     borderColor: colors.border.secondary,
                   }}
                 >
                   <X size={14} color={colors.fg.default} strokeWidth={2} />
                 </TouchableOpacity>
               </View>
-            </View>
+              </View>
 
             {activeDevsoleSection === "console" ? (
-              <View style={{ flex: 1, padding: 10 }}>
+              <View style={{ flex: 1 }}>
                 <ConsoleSection
                   entries={activeConsoleEntries}
                   onClear={clearActiveConsole}

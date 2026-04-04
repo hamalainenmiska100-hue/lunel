@@ -1,8 +1,10 @@
 import { FlashList } from "@shopify/flash-list";
 import { useTheme } from "@/contexts/ThemeContext";
 import { AlertTriangle, ArrowUp, Bug, CircleAlert, Info, Search, TerminalSquare, Trash2 } from "lucide-react-native";
-import React, { memo, useEffect, useMemo, useRef, useState } from "react";
-import { Text, TextInput, TouchableOpacity, View } from "react-native";
+import { memo, useEffect, useMemo, useRef, useState } from "react";
+import { ScrollView, Text, TextInput, TouchableOpacity, View } from "react-native";
+import Animated, { useAnimatedStyle } from "react-native-reanimated";
+import { useReanimatedKeyboardAnimation } from "react-native-keyboard-controller";
 import { DevsoleConsoleEntry, DevsoleConsoleLevel } from "./types";
 
 const LEVELS: { id: "all" | DevsoleConsoleLevel; label: string }[] = [
@@ -211,6 +213,11 @@ export default function ConsoleSection({
   listKey: string;
 }) {
   const { colors, fonts, radius } = useTheme();
+  const { height: keyboardHeightSV } = useReanimatedKeyboardAnimation();
+  const [inputFocused, setInputFocused] = useState(false);
+  const bottomBarAnimatedStyle = useAnimatedStyle(() => ({
+    paddingBottom: inputFocused ? Math.max(8, 8 - keyboardHeightSV.value) : 8,
+  }));
   const [activeLevel, setActiveLevel] = useState<"all" | DevsoleConsoleLevel>("all");
   const [input, setInput] = useState("");
   const [searchOpen, setSearchOpen] = useState(false);
@@ -255,11 +262,50 @@ export default function ConsoleSection({
         style={{
           flexDirection: "row",
           alignItems: "center",
-          justifyContent: "space-between",
-          gap: 8,
+          paddingHorizontal: 8,
+          backgroundColor: colors.bg.raised,
+          borderBottomWidth: 0.5,
+          borderBottomColor: colors.border.secondary,
         }}
       >
-        <ScrollRow>
+        <ScrollView
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          style={{ flex: 1 }}
+          contentContainerStyle={{ flexDirection: "row" }}
+        >
+          {LEVELS.map((level) => {
+            const isActive = level.id === activeLevel;
+            return (
+              <TouchableOpacity
+                key={level.id}
+                onPress={() => setActiveLevel(level.id)}
+                activeOpacity={0.85}
+                style={{
+                  paddingHorizontal: 8,
+                  paddingTop: 10,
+                  paddingBottom: 10,
+                  marginRight: 4,
+                  borderBottomWidth: 2,
+                  borderBottomColor: isActive ? colors.fg.muted : 'transparent',
+                  marginBottom: -0.5,
+                }}
+              >
+                <Text
+                  style={{
+                    color: isActive ? colors.fg.default : colors.fg.muted,
+                    fontSize: 11,
+                    fontFamily: isActive ? fonts.sans.semibold : fonts.sans.medium,
+                  }}
+                >
+                  {level.label}
+                </Text>
+              </TouchableOpacity>
+            );
+          })}
+        </ScrollView>
+
+        <View style={{ flexDirection: "row", gap: 4, marginLeft: 6 }}>
           <TouchableOpacity
             onPress={() => setSearchOpen((current) => !current)}
             activeOpacity={0.85}
@@ -269,82 +315,49 @@ export default function ConsoleSection({
               alignItems: "center",
               justifyContent: "center",
               borderRadius: radius.full,
-              backgroundColor: searchOpen ? colors.accent.default : colors.bg.raised,
-              borderWidth: 1,
+              backgroundColor: searchOpen ? colors.accent.default : colors.bg.base,
+              borderWidth: 0.5,
               borderColor: searchOpen ? colors.accent.default : colors.border.secondary,
             }}
           >
             <Search
-              size={13}
+              size={14}
               color={searchOpen ? '#ffffff' : colors.fg.default}
               strokeWidth={2}
             />
           </TouchableOpacity>
 
-          {LEVELS.map((level, index) => {
-            const isActive = level.id === activeLevel;
-            return (
-              <React.Fragment key={level.id}>
-                <TouchableOpacity
-                  onPress={() => setActiveLevel(level.id)}
-                  activeOpacity={0.85}
-                  style={{
-                    height: 28,
-                    paddingHorizontal: 9,
-                    borderRadius: radius.full,
-                    backgroundColor: isActive ? colors.accent.default : colors.bg.raised,
-                    borderWidth: 1,
-                    borderColor: isActive ? colors.accent.default : colors.border.secondary,
-                    alignItems: "center",
-                    justifyContent: "center",
-                  }}
-                >
-                  <Text
-                    style={{
-                      color: isActive ? '#ffffff' : colors.fg.default,
-                      fontSize: 10,
-                      lineHeight: 10,
-                      fontFamily: isActive ? fonts.sans.semibold : fonts.sans.medium,
-                      includeFontPadding: false,
-                    }}
-                  >
-                    {level.label}
-                  </Text>
-                </TouchableOpacity>
-              </React.Fragment>
-            );
-          })}
-        </ScrollRow>
-
-        <TouchableOpacity
-          onPress={onClear}
-          style={{
-            width: 28,
-            height: 28,
-            alignItems: "center",
-            justifyContent: "center",
-            borderRadius: radius.full,
-            backgroundColor: colors.bg.raised,
-            borderWidth: 1,
-            borderColor: colors.border.secondary,
-          }}
-        >
-          <Trash2 size={13} color={colors.fg.default} strokeWidth={2} />
-        </TouchableOpacity>
+          <TouchableOpacity
+            onPress={onClear}
+            style={{
+              width: 28,
+              height: 28,
+              alignItems: "center",
+              justifyContent: "center",
+              borderRadius: radius.full,
+              backgroundColor: colors.bg.base,
+              borderWidth: 0.5,
+              borderColor: colors.border.secondary,
+            }}
+          >
+            <Trash2 size={13} color={colors.fg.default} strokeWidth={2} />
+          </TouchableOpacity>
+        </View>
       </View>
 
       {searchOpen ? (
-        <View
-          style={{
-            minHeight: 32,
-            paddingHorizontal: 10,
-            backgroundColor: colors.bg.raised,
-            borderRadius: radius.full,
-            borderWidth: 1,
-            borderColor: colors.border.secondary,
-            justifyContent: "center",
-          }}
-        >
+        <View style={{ paddingHorizontal: 10 }}>
+          <View
+            style={{
+              minHeight: 32,
+              paddingHorizontal: 10,
+              backgroundColor: colors.bg.raised,
+              borderRadius: 8,
+              borderWidth: 0.5,
+              borderColor: colors.border.secondary,
+              justifyContent: "center",
+            }}
+          >
           <TextInput
             ref={searchInputRef}
             value={searchQuery}
@@ -361,10 +374,11 @@ export default function ConsoleSection({
             autoCorrect={false}
             returnKeyType="search"
           />
+          </View>
         </View>
       ) : null}
 
-      <View style={{ flex: 1 }}>
+      <View style={{ flex: 1, paddingHorizontal: 10 }}>
         {filteredEntries.length === 0 ? (
           <View
             style={{
@@ -376,7 +390,7 @@ export default function ConsoleSection({
               gap: 10,
             }}
           >
-            <TerminalSquare size={20} color={colors.fg.muted} strokeWidth={2} />
+            <TerminalSquare size={35} color={colors.fg.muted} strokeWidth={1.4} />
             <Text style={{ color: colors.fg.default, fontSize: 14, fontFamily: fonts.sans.semibold }}>
               No console events yet
             </Text>
@@ -414,21 +428,26 @@ export default function ConsoleSection({
         )}
       </View>
 
-      <View
-        style={{
+      <Animated.View
+        style={[{
           flexDirection: "row",
           alignItems: "center",
           gap: 4,
-        }}
+          paddingHorizontal: 10,
+          paddingTop: 6,
+          backgroundColor: colors.bg.raised,
+          borderTopWidth: 0.5,
+          borderTopColor: colors.border.secondary,
+        }, bottomBarAnimatedStyle]}
       >
         <View
           style={{
             flex: 1,
             minHeight: 32,
-            paddingHorizontal: 8,
-            backgroundColor: colors.bg.raised,
-            borderRadius: radius.full,
-            borderWidth: 1,
+            paddingHorizontal: 10,
+            backgroundColor: colors.bg.base,
+            borderRadius: 8,
+            borderWidth: 0.5,
             borderColor: colors.border.secondary,
             justifyContent: "center",
           }}
@@ -448,43 +467,31 @@ export default function ConsoleSection({
             autoCapitalize="none"
             autoCorrect={false}
             returnKeyType="go"
+            onFocus={() => setInputFocused(true)}
+            onBlur={() => setInputFocused(false)}
           />
         </View>
 
         <TouchableOpacity
           onPress={handleExecute}
+          disabled={!input.trim()}
           activeOpacity={0.85}
           style={{
-            width: 30,
-            height: 30,
+            width: 32,
+            height: 32,
             alignItems: "center",
             justifyContent: "center",
-            borderRadius: radius.full,
-            backgroundColor: colors.accent.default,
-            borderWidth: 1,
-            borderColor: colors.accent.default,
+            borderRadius: 8,
+            backgroundColor: input.trim() ? colors.accent.default : colors.bg.base,
+            borderWidth: 0.5,
+            borderColor: input.trim() ? colors.accent.default : colors.border.secondary,
+            opacity: input.trim() ? 1 : 0.5,
           }}
         >
-          <ArrowUp size={15} color={'#ffffff'} strokeWidth={2.2} />
+          <ArrowUp size={15} color={input.trim() ? '#ffffff' : colors.fg.muted} strokeWidth={2.2} />
         </TouchableOpacity>
-      </View>
+      </Animated.View>
     </View>
   );
 }
 
-function ScrollRow({ children }: { children: React.ReactNode }) {
-  return (
-    <View style={{ flex: 1 }}>
-      <FlashList
-        horizontal
-        data={React.Children.toArray(children)}
-        keyExtractor={(_, index) => String(index)}
-        renderItem={({ item }) => item as React.ReactElement}
-        estimatedItemSize={64}
-        contentContainerStyle={{ paddingRight: 6 }}
-        ItemSeparatorComponent={() => <View style={{ width: 6 }} />}
-        showsHorizontalScrollIndicator={false}
-      />
-    </View>
-  );
-}

@@ -352,7 +352,7 @@ export default function DrawerContent(props: DrawerContentComponentProps) {
                             })}
                             {isLoading && (
                               <View style={styles.viewAllRow}>
-                                <SpinningLoader color={colors.fg.muted} opacity={0.6} size={16} />
+                                <SpinningLoader color={colors.fg.muted} opacity={0.6} size={14} />
                                 <Text style={[styles.viewAllText, { color: colors.fg.muted, fontFamily: fonts.sans.regular, opacity: 0.6 }]}>
                                   Loading...
                                 </Text>

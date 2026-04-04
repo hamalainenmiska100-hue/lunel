@@ -3070,7 +3070,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
                   position: "absolute",
                   left: "50%",
                   transform: [{ translateX: "-50%" }],
-                  bottom: composerHeight + 18,
+                  bottom: isVoiceMode ? 68 : composerHeight + 18,
                   paddingHorizontal: 8,
                   paddingVertical: 5,
                   borderRadius: 8,
@@ -3093,23 +3093,24 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
               <View
                 style={{
                   backgroundColor: colors.bg.raised,
-                  borderRadius: 9999,
+                  borderRadius: 10,
                   borderWidth: StyleSheet.hairlineWidth,
                   borderColor: colors.fg.disabled,
-                  paddingHorizontal: 7,
+                  paddingHorizontal: 6,
+                  paddingVertical: 4,
                   marginHorizontal: 8,
                   marginBottom: 8,
                   flexDirection: "row",
                   alignItems: "center",
-                  minHeight: 52,
+                  minHeight: 44,
                 }}
               >
                 {/* Cancel */}
                 <TouchableOpacity
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 9999,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor: colors.bg.base,
@@ -3118,18 +3119,18 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
                   disabled={isVoiceBusy}
                   activeOpacity={0.7}
                 >
-                  <X size={18} color={colors.fg.default} />
+                  <X size={16} color={colors.fg.default} />
                 </TouchableOpacity>
 
                 {/* Waveform */}
                 <View
                   style={{
                     flex: 1,
-                    height: 40,
+                    height: 32,
                     flexDirection: "row",
                     alignItems: "center",
                     justifyContent: "space-between",
-                    paddingHorizontal: 8,
+                    paddingHorizontal: 6,
                     gap: 2,
                   }}
                 >
@@ -3158,9 +3159,9 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
                 {/* Send */}
                 <TouchableOpacity
                   style={{
-                    width: 40,
-                    height: 40,
-                    borderRadius: 9999,
+                    width: 32,
+                    height: 32,
+                    borderRadius: 8,
                     alignItems: "center",
                     justifyContent: "center",
                     backgroundColor: colors.accent.default,
@@ -3174,7 +3175,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
                   {isVoiceBusy ? (
                     <ActivityIndicator size="small" color={'#ffffff'} />
                   ) : (
-                    <Check size={22} color={'#ffffff'} strokeWidth={2.5} />
+                    <Check size={18} color={'#ffffff'} strokeWidth={2.5} />
                   )}
                 </TouchableOpacity>
               </View>
