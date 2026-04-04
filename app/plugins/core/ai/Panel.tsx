@@ -15,7 +15,7 @@ import FileChange from "./FileChange";
 import {
   Sparkle, Sparkles, Check, X, Plus,
   Hammer, Map as MapIcon, Square, AlertTriangle, Key,
-  EllipsisVertical, ChevronDown, Mic,
+  EllipsisVertical, ChevronDown, Mic, LoaderCircle,
 } from "lucide-react-native";
 import React, { memo, useCallback, useEffect, useMemo, useRef, useState } from "react";
 import {
@@ -460,6 +460,89 @@ function ErrorMessageView({ text }: { text: string }) {
       </Text>
     </View>
   );
+}
+
+function ThinkingIndicatorView({ label = "Thinking..." }: { label?: string }) {
+  const { colors, fonts } = useTheme();
+  const spin = useSharedValue(0);
+
+  useEffect(() => {
+    spin.value = withRepeat(
+      withTiming(360, { duration: 900, easing: Easing.linear }),
+      -1,
+      false,
+    );
+  }, [spin]);
+
+  const spinnerStyle = useAnimatedStyle(() => ({
+    transform: [{ rotate: `${spin.value}deg` }],
+  }));
+
+  return (
+    <View style={styles.thinkingMessage}>
+      <Animated.View style={spinnerStyle}>
+        <LoaderCircle size={15} color={colors.fg.muted} strokeWidth={2} />
+      </Animated.View>
+      <Text style={[styles.thinkingText, { color: colors.fg.muted, fontFamily: fonts.sans.medium }]}>
+        {label}
+      </Text>
+    </View>
+  );
+}
+
+function deriveActivityLabelFromPart(part: AIPart): string | null {
+  if (part.type === "reasoning") return "Thinking...";
+  if (part.type !== "tool" && part.type !== "tool-call" && part.type !== "tool-result") return null;
+
+  const inputRaw = typeof part.input === "string"
+    ? part.input
+    : (part.input && typeof part.input === "object")
+      ? JSON.stringify(part.input)
+      : "";
+  const outputRaw = typeof part.output === "string"
+    ? part.output
+    : "";
+  const raw = `${String(part.toolName || "")} ${String(part.name || "")} ${inputRaw} ${outputRaw}`.toLowerCase();
+  if (!raw) return "Working...";
+
+  if (
+    raw.includes("search")
+    || raw.includes("grep")
+    || raw.includes("ripgrep")
+    || raw.includes("glob")
+    || raw.includes("find")
+    || raw.includes("scan")
+    || raw.includes("list_files")
+    || raw.includes("listfiles")
+    || raw.includes("ls ")
+    || raw.includes("ls\n")
+    || raw.includes("tree")
+    || raw.includes("read")
+    || raw.includes("cat ")
+    || raw.includes("cat\n")
+    || raw.includes("open file")
+    || raw.includes("open_file")
+    || raw.includes("view file")
+  ) {
+    return "Searching codebase...";
+  }
+
+  if (
+    raw.includes("edit")
+    || raw.includes("write")
+    || raw.includes("patch")
+    || raw.includes("file-change")
+    || raw.includes("filechange")
+    || raw.includes("diff")
+  ) {
+    return "Working...";
+  }
+
+  if (raw.includes("command") || raw.includes("exec")) {
+    return "Working...";
+  }
+
+  return "Working...";
 }
 
 // ============================================================================
@@ -1460,6 +1543,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
   const [showScrollToBottom, setShowScrollToBottom] = useState(false);
   const [errorMessages, setErrorMessages] = useState<Record<string, string[]>>({});
   const [showDetailedView, setShowDetailedView] = useState(false);
+  const [sessionActivityLabels, setSessionActivityLabels] = useState<Record<string, string>>({});
   const inputHeightSV = useSharedValue(52);
   const voiceLayerOpacitySV = useSharedValue(0);
   const { height: keyboardHeightSV } = useReanimatedKeyboardAnimation();
@@ -1472,6 +1556,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
   const messagesListRef = useRef<FlashList<any>>(null);
   const isNearBottomRef = useRef(true);
   const autoFollowRef = useRef(true);
+  const userDraggingMessagesRef = useRef(false);
   const prevStreamingRef = useRef(false);
   const contentHeightRef = useRef(0);
   const listViewportHeightRef = useRef(0);
@@ -1538,6 +1623,10 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
           const msgId = (part?.messageID as string) || (msgInfo?.id as string) || (props.messageID as string);
           const partId = part?.id as string | undefined;
           if (sessId && msgId && part != null) {
+            const nextActivityLabel = deriveActivityLabelFromPart(part);
+            if (nextActivityLabel) {
+              setSessionActivityLabels((prev) => ({ ...prev, [sessId]: nextActivityLabel }));
+            }
             setMessagesMap((prev) => {
               const existing = prev[sessId] || [];
               const msgIdx = existing.findIndex((m) => m.id === msgId);
@@ -1599,24 +1688,59 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
         }
         case "session.status": {
           // OpenCode: properties = { sessionID, status: { type: "idle" | "busy" | "retry" } }
+          const sessId = (props.sessionID as string) || (props.sessionId as string);
           const statusObj = props.status as Record<string, unknown> | string | undefined;
           const statusType = typeof statusObj === "object" ? (statusObj?.type as string) : (statusObj as string);
-          setIsStreaming(statusType === "busy" || statusType === "running" || statusType === "working");
+          const normalized = (statusType || "").toLowerCase();
+          const streaming = normalized === "busy" || normalized === "running" || normalized === "working";
+          setIsStreaming(streaming);
+          if (sessId && streaming) {
+            setSessionActivityLabels((prev) => {
+              const current = prev[sessId];
+              if (
+                current === "Searching codebase..."
+                || current === "Waiting for approval..."
+                || current === "Waiting for input..."
+              ) {
+                return prev;
+              }
+              return {
+                ...prev,
+                [sessId]: "Thinking...",
+              };
+            });
+          }
           break;
         }
         case "session.idle": {
+          const sessId = (props.sessionID as string) || (props.sessionId as string);
           setIsStreaming(false);
+          if (sessId) {
+            setSessionActivityLabels((prev) => ({ ...prev, [sessId]: "Done" }));
+          }
           break;
         }
         case "permission.updated": {
+          const sessId = (props.sessionID as string) || (props.sessionId as string);
+          if (sessId) {
+            setSessionActivityLabels((prev) => ({ ...prev, [sessId]: "Waiting for approval..." }));
+          }
           setPendingPermission(props as unknown as AIPermission);
           break;
         }
         case "permission.replied": {
+          const sessId = (props.sessionID as string) || (props.sessionId as string);
+          if (sessId) {
+            setSessionActivityLabels((prev) => ({ ...prev, [sessId]: "Working..." }));
+          }
           setPendingPermission(null);
           break;
         }
         case "question.asked": {
+          const sessId = (props.sessionID as string) || (props.sessionId as string);
+          if (sessId) {
+            setSessionActivityLabels((prev) => ({ ...prev, [sessId]: "Waiting for input..." }));
+          }
           setPendingQuestion(props as unknown as AIQuestion);
           break;
         }
@@ -1631,6 +1755,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
           setIsStreaming(false);
           const sessId = (props.sessionID as string) || (props.sessionId as string);
           if (sessId) {
+            setSessionActivityLabels((prev) => ({ ...prev, [sessId]: "Error" }));
             setErrorMessages((prev) => ({
               ...prev,
               [sessId]: [...(prev[sessId] || []), errMsg],
@@ -2215,6 +2340,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
             break;
           default:
             await ai.sendPrompt(sessId, text, getModelRef(), selectedAgentForBackend, activeBackend);
+            setSessionActivityLabels((prev) => ({ ...prev, [sessId]: "Thinking..." }));
             setIsStreaming(true);
         }
       } catch (err) {
@@ -2259,6 +2385,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
         activeBackend,
         pendingImage ? [pendingImage] : undefined,
       );
+      setSessionActivityLabels((prev) => ({ ...prev, [sessId]: "Thinking..." }));
       setIsStreaming(true);
       setPendingImage(null);
     } catch (err) {
@@ -2432,16 +2559,28 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
   };
 
   // Build flat list data: messages + errors
+  const activeSessionActivityLabel = activeSessionId
+    ? (sessionActivityLabels[activeSessionId] || "Thinking...")
+    : "Thinking...";
+
   const listData = useMemo(() => {
-    const items: Array<{ type: "message"; data: AIMessage } | { type: "error"; data: string; id: string }> = [];
+    const items: Array<
+      | { type: "message"; data: AIMessage }
+      | { type: "error"; data: string; id: string }
+      | { type: "thinking"; id: string; label: string }
+    > = [];
     for (const msg of currentMessages) {
       items.push({ type: "message", data: msg });
+    }
+    const shouldShowThinking = isStreaming;
+    if (shouldShowThinking) {
+      items.push({ type: "thinking", id: "thinking-indicator", label: activeSessionActivityLabel });
     }
     for (let i = 0; i < currentErrors.length; i++) {
       items.push({ type: "error", data: currentErrors[i], id: `err-${i}` });
     }
     return items;
-  }, [currentMessages, currentErrors]);
+  }, [currentMessages, currentErrors, isStreaming, activeSessionActivityLabel]);
 
   // Tab renderer
   const renderAITab = useCallback(
@@ -2476,6 +2615,9 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
   const renderListItem = useCallback(({ item }: { item: any }) => {
     if (item.type === "error") {
       return <ErrorMessageView text={item.data} />;
+    }
+    if (item.type === "thinking") {
+      return <ThinkingIndicatorView label={item.label} />;
     }
     return (
       <MessageBubble
@@ -2686,17 +2828,29 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
                 onContentSizeChange={(_, contentHeight) => {
                   contentHeightRef.current = contentHeight;
                   const grew = contentHeight > lastContentHeightRef.current;
-                  if (grew && isStreaming && autoFollowRef.current && isNearBottomRef.current) {
+                  if (grew && isStreaming && autoFollowRef.current) {
                     scrollToLatest(true);
                   }
                   lastContentHeightRef.current = contentHeight;
+                }}
+                onScrollBeginDrag={() => {
+                  userDraggingMessagesRef.current = true;
+                }}
+                onScrollEndDrag={() => {
+                  userDraggingMessagesRef.current = false;
+                }}
+                onMomentumScrollEnd={() => {
+                  userDraggingMessagesRef.current = false;
                 }}
                 onScroll={(e) => {
                   const { contentOffset, contentSize, layoutMeasurement } = e.nativeEvent;
                   const distanceFromBottom = contentSize.height - layoutMeasurement.height - contentOffset.y;
                   const nearBottom = distanceFromBottom <= 24;
-                  if (!nearBottom && isStreaming) {
+                  if (!nearBottom && isStreaming && userDraggingMessagesRef.current) {
                     autoFollowRef.current = false;
+                  }
+                  if (nearBottom) {
+                    autoFollowRef.current = true;
                   }
                   isNearBottomRef.current = nearBottom;
                   setShowScrollToBottom(!nearBottom);
@@ -2710,10 +2864,10 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
                 <View style={styles.logoContainer}>
                   <View style={[styles.logoWrapper, { marginBottom: activeBackend === "codex" ? 8 : 0 }]}>
                     {activeBackend === "codex"
-                      ? <Codex size={80} color={colors.fg.default} />
-                      : <OpenCode size={85} color={colors.fg.default} />}
+                      ? <Codex size={64} color={colors.fg.default} />
+                      : <OpenCode size={68} color={colors.fg.default} />}
                   </View>
-                  <Text style={{ color: colors.fg.muted, fontSize: 20, fontFamily: "PublicSans_500Medium", textAlign: "center", marginTop: 16, paddingHorizontal: 24 }}>
+                  <Text style={{ color: colors.fg.muted, fontSize: 17, fontFamily: "PublicSans_500Medium", textAlign: "center", marginTop: 14, paddingHorizontal: 24 }}>
                     What's the plan today? I'm in.
                   </Text>
                 </View>
@@ -3217,6 +3371,19 @@ const styles = StyleSheet.create({
     padding: 10,
     marginVertical: 4,
     borderLeftWidth: 3,
+  },
+  thinkingMessage: {
+    alignSelf: "flex-start",
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 8,
+    paddingHorizontal: 2,
+    paddingVertical: 4,
+    marginVertical: 7,
+  },
+  thinkingText: {
+    fontSize: 13,
+    letterSpacing: 0.1,
   },
 
   composerBottomBar: {
