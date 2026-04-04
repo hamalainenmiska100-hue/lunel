@@ -1,11 +1,10 @@
 import { useTheme } from "@/contexts/ThemeContext";
-import { ChevronLeft, ExternalLink } from "lucide-react-native";
-import * as Haptics from "expo-haptics";
+import PluginHeader, { usePluginHeaderHeight } from "@/components/PluginHeader";
+import { ExternalLink } from "lucide-react-native";
 import { useRouter } from "expo-router";
 import React from "react";
 import * as WebBrowser from "expo-web-browser";
 import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from "react-native";
-import { SafeAreaView } from "react-native-safe-area-context";
 
 interface FaqItemProps {
   question: string;
@@ -18,14 +17,14 @@ interface LinkRowProps {
 }
 
 function FaqItem({ question, answer }: FaqItemProps) {
-  const { colors, fonts, spacing } = useTheme();
+  const { colors, fonts, spacing, typography } = useTheme();
 
   return (
-    <View style={[styles.faqCard, { backgroundColor: colors.bg.raised, borderColor: colors.bg.raised, borderRadius: 12, padding: spacing[4] }]}>
-      <Text style={[styles.faqQuestion, { color: colors.fg.default, fontFamily: fonts.sans.semibold }]}>
+    <View style={[styles.faqCard, { backgroundColor: colors.bg.raised, borderColor: colors.bg.raised, borderRadius: 10, padding: spacing[3] }]}>
+      <Text style={[styles.faqQuestion, { color: colors.fg.default, fontFamily: fonts.sans.medium, fontSize: typography.body }]}>
         {question}
       </Text>
-      <Text style={[styles.faqAnswer, { color: colors.fg.muted, fontFamily: fonts.sans.regular }]}>
+      <Text style={[styles.faqAnswer, { color: colors.fg.muted, fontFamily: fonts.sans.regular, fontSize: typography.caption }]}>
         {answer}
       </Text>
     </View>
@@ -33,7 +32,7 @@ function FaqItem({ question, answer }: FaqItemProps) {
 }
 
 function LinkRow({ label, url }: LinkRowProps) {
-  const { colors, fonts, radius, spacing } = useTheme();
+  const { colors, fonts, spacing, typography } = useTheme();
 
   const handleOpen = () => {
     void WebBrowser.openBrowserAsync(url);
@@ -48,13 +47,13 @@ function LinkRow({ label, url }: LinkRowProps) {
         {
           backgroundColor: colors.bg.raised,
           borderColor: colors.bg.raised,
-          borderRadius: radius.lg,
-          paddingVertical: spacing[3],
-          paddingHorizontal: spacing[4],
+          borderRadius: 10,
+          paddingVertical: spacing[2],
+          paddingHorizontal: spacing[3],
         },
       ]}
     >
-      <Text style={[styles.linkLabel, { color: colors.fg.default, fontFamily: fonts.sans.medium }]}>
+      <Text style={[styles.linkLabel, { color: colors.fg.default, fontFamily: fonts.sans.medium, fontSize: typography.body }]}>
         {label}
       </Text>
       <ExternalLink size={16} color={colors.fg.subtle} strokeWidth={2} />
@@ -63,60 +62,19 @@ function LinkRow({ label, url }: LinkRowProps) {
 }
 
 export default function HelpPage() {
-  const { colors, fonts, radius, spacing } = useTheme();
+  const { colors, fonts, spacing, typography } = useTheme();
   const router = useRouter();
+  const headerHeight = usePluginHeaderHeight();
 
   return (
-    <SafeAreaView style={[styles.container, { backgroundColor: colors.bg.base }]} edges={["top"]}>
-      <View style={[styles.header, { backgroundColor: colors.bg.base }]}>
-        <TouchableOpacity
-          onPress={() => {
-            void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
-            router.back();
-          }}
-          style={[
-            styles.backButton,
-            {
-              borderRadius: radius.full,
-              backgroundColor: colors.bg.raised,
-              borderColor: colors.border.secondary,
-              borderWidth: 0.5,
-            },
-          ]}
-          hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
-        >
-          <ChevronLeft size={24} color={colors.fg.default} strokeWidth={2} />
-        </TouchableOpacity>
-        <View
-          style={[
-            styles.titlePill,
-            {
-              borderRadius: radius.full,
-              backgroundColor: colors.bg.raised,
-              borderColor: colors.border.secondary,
-              borderWidth: 0.5,
-            },
-          ]}
-        >
-          <Text style={[styles.headerTitle, { color: colors.fg.default, fontFamily: fonts.sans.semibold }]}>
-            Help & Information
-          </Text>
-        </View>
-        <View
-          style={[
-            styles.placeholder,
-            {
-              opacity: 0,
-            },
-          ]}
-        />
-      </View>
+    <View style={[styles.container, { backgroundColor: colors.bg.base, paddingTop: headerHeight }]}>
+      <PluginHeader title="Help & Information" colors={colors} onBack={() => router.back()} />
 
       <ScrollView style={styles.content} showsVerticalScrollIndicator={false} keyboardDismissMode="on-drag">
-        <Text style={[styles.sectionHeader, { color: colors.fg.muted, fontFamily: fonts.sans.medium }]}>
+        <Text style={[styles.sectionHeader, { color: colors.fg.muted, fontFamily: fonts.sans.medium, fontSize: typography.caption }]}>
           GETTING STARTED
         </Text>
-        <View style={[styles.faqList, { marginHorizontal: 16 }]}>
+        <View style={[styles.faqList, { marginHorizontal: 12 }]}>
           <FaqItem
             question="How do I connect to a session?"
             answer="Run `npx lunel-cli` on your machine, then scan the generated QR code from the app."
@@ -127,10 +85,10 @@ export default function HelpPage() {
           />
         </View>
 
-        <Text style={[styles.sectionHeader, { color: colors.fg.muted, fontFamily: fonts.sans.medium }]}>
+        <Text style={[styles.sectionHeader, { color: colors.fg.muted, fontFamily: fonts.sans.medium, fontSize: typography.caption }]}>
           TROUBLESHOOTING
         </Text>
-        <View style={[styles.faqList, { marginHorizontal: 16 }]}>
+        <View style={[styles.faqList, { marginHorizontal: 12 }]}>
           <FaqItem
             question="Why is the scanner not working?"
             answer="Enable camera permission in iOS Settings and make sure the QR code is fully visible."
@@ -141,10 +99,10 @@ export default function HelpPage() {
           />
         </View>
 
-        <Text style={[styles.sectionHeader, { color: colors.fg.muted, fontFamily: fonts.sans.medium }]}>
+        <Text style={[styles.sectionHeader, { color: colors.fg.muted, fontFamily: fonts.sans.medium, fontSize: typography.caption }]}>
           LINKS
         </Text>
-        <View style={[styles.linkList, { marginHorizontal: 16 }]}>
+        <View style={[styles.linkList, { marginHorizontal: 12 }]}>
           <LinkRow label="Terms" url="https://app.lunel.dev/terms" />
           <LinkRow label="Policy" url="https://app.lunel.dev/policy" />
           <LinkRow label="Security" url="https://app.lunel.dev/security" />
@@ -155,7 +113,7 @@ export default function HelpPage() {
 
         <View style={{ height: spacing[8] }} />
       </ScrollView>
-    </SafeAreaView>
+    </View>
   );
 }
 
@@ -163,59 +121,29 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  header: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "space-between",
-    paddingHorizontal: 12,
-    height: 64,
-    paddingBottom: 10,
-  },
-  backButton: {
-    width: 45,
-    height: 45,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-  titlePill: {
-    minHeight: 45,
-    justifyContent: "center",
-    alignItems: "center",
-    paddingHorizontal: 20,
-  },
-  headerTitle: {
-    fontSize: 16,
-  },
-  placeholder: {
-    width: 45,
-    height: 45,
-  },
   content: {
     flex: 1,
   },
   sectionHeader: {
-    fontSize: 12,
     letterSpacing: 0.5,
-    paddingHorizontal: 20,
-    paddingTop: 24,
-    paddingBottom: 8,
+    paddingHorizontal: 16,
+    paddingTop: 16,
+    paddingBottom: 6,
   },
   faqList: {
-    gap: 10,
+    gap: 8,
   },
   faqCard: {
     borderWidth: 1,
   },
   faqQuestion: {
-    fontSize: 16,
     marginBottom: 6,
   },
   faqAnswer: {
-    fontSize: 14,
-    lineHeight: 20,
+    lineHeight: 16,
   },
   linkList: {
-    gap: 10,
+    gap: 8,
   },
   linkRow: {
     borderWidth: 1,
@@ -223,7 +151,5 @@ const styles = StyleSheet.create({
     alignItems: "center",
     justifyContent: "space-between",
   },
-  linkLabel: {
-    fontSize: 15,
-  },
+  linkLabel: {},
 });
