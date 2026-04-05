@@ -8,7 +8,7 @@ import { useTheme } from "@/contexts/ThemeContext";
 import { useConnection } from "@/contexts/ConnectionContext";
 import { useEditorConfig } from "@/contexts/EditorContext";
 import { useAI } from "@/hooks/useAI";
-import type { AIEvent, AISession, AIMessage, AIPart, AIAgent, AIProvider, AIPermission, AIQuestion, AIFileAttachment, ModelRef, PermissionResponse, AiBackend } from "./types";
+import type { AIEvent, AISession, AIMessage, AIPart, AIAgent, AIProvider, AIPermission, AIQuestion, AIFileAttachment, ModelRef, PermissionResponse, AiBackend, CodexPromptOptions } from "./types";
 import Markdown from "./Markdown";
 import ToolCall from "./ToolCall";
 import FileChange from "./FileChange";
@@ -81,7 +81,7 @@ const DEFAULT_OPENCODE_AGENTS: { id: string; name: string; icon?: React.Componen
   { id: "plan", name: "Plan", icon: MapIcon },
 ];
 
-type ComposerSheet = "configure" | null;
+type ComposerSheet = "configure" | "codex-preferences" | null;
 
 function AISkeleton({ colors, paddingTop = 0 }: { colors: any; paddingTop?: number }) {
   const opacity = useSharedValue(0.35);
@@ -1715,6 +1715,193 @@ function ConfigureSheet({
   );
 }
 
+function CodexPreferencesSheet({
+  visible,
+  selectedReasoningEffort,
+  selectedSpeed,
+  onSelectReasoningEffort,
+  onSelectSpeed,
+  onClose,
+  colors,
+  radius,
+  fonts,
+}: {
+  visible: boolean;
+  selectedReasoningEffort: NonNullable<CodexPromptOptions["reasoningEffort"]>;
+  selectedSpeed: NonNullable<CodexPromptOptions["speed"]>;
+  onSelectReasoningEffort: (value: NonNullable<CodexPromptOptions["reasoningEffort"]>) => void;
+  onSelectSpeed: (value: NonNullable<CodexPromptOptions["speed"]>) => void;
+  onClose: () => void;
+  colors: any;
+  radius: any;
+  fonts: any;
+}) {
+  const [modalVisible, setModalVisible] = useState(false);
+  const backdropOpacity = useSharedValue(0);
+  const sheetTranslateY = useSharedValue(SCREEN_HEIGHT);
+
+  const hideModal = useCallback(() => setModalVisible(false), []);
+
+  useEffect(() => {
+    if (visible) {
+      setModalVisible(true);
+      backdropOpacity.value = 0;
+      sheetTranslateY.value = SCREEN_HEIGHT;
+      backdropOpacity.value = withTiming(1, {
+        duration: 220,
+        easing: Easing.out(Easing.cubic),
+      });
+      sheetTranslateY.value = withTiming(0, {
+        duration: 260,
+        easing: Easing.out(Easing.cubic),
+      });
+    } else {
+      backdropOpacity.value = withTiming(0, {
+        duration: 200,
+        easing: Easing.out(Easing.cubic),
+      });
+      sheetTranslateY.value = withTiming(
+        SCREEN_HEIGHT,
+        {
+          duration: 240,
+          easing: Easing.out(Easing.cubic),
+        },
+        (finished) => {
+          if (finished) runOnJS(hideModal)();
+        }
+      );
+    }
+  }, [visible, backdropOpacity, sheetTranslateY, hideModal]);
+
+  const backdropAnimatedStyle = useAnimatedStyle(() => ({
+    opacity: backdropOpacity.value,
+  }));
+  const sheetAnimatedStyle = useAnimatedStyle(() => ({
+    transform: [{ translateY: sheetTranslateY.value }],
+  }));
+
+  if (!modalVisible) return null;
+
+  const reasoningOptions: Array<{ id: NonNullable<CodexPromptOptions["reasoningEffort"]>; label: string; description: string }> = [
+    { id: "low", label: "Low", description: "Fastest responses with lighter reasoning." },
+    { id: "medium", label: "Medium", description: "Balanced speed and reasoning depth." },
+    { id: "high", label: "High", description: "More deliberate, deeper reasoning." },
+  ];
+  const speedOptions: Array<{ id: NonNullable<CodexPromptOptions["speed"]>; label: string; description: string }> = [
+    { id: "fast", label: "Fast", description: "Prioritize lower latency." },
+    { id: "balanced", label: "Balanced", description: "Balance speed and quality." },
+    { id: "quality", label: "Quality", description: "Prioritize best output quality." },
+  ];
+
+  return (
+    <Modal transparent animationType="none" visible onRequestClose={onClose}>
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <View style={{ flex: 1 }}>
+          <Animated.View style={[styles.sheetBackdrop, backdropAnimatedStyle]} pointerEvents="box-none">
+            <Pressable style={{ flex: 1 }} onPress={onClose} />
+          </Animated.View>
+          <Animated.View
+            style={[
+              styles.sheetContainer,
+              {
+                backgroundColor: colors.bg.raised,
+                borderTopLeftRadius: 20,
+                borderTopRightRadius: 20,
+                height: "52%",
+              },
+              sheetAnimatedStyle,
+            ]}
+          >
+            <View style={styles.sheetHeader}>
+              <Text style={{ flex: 1, color: colors.fg.default, fontSize: 18, fontFamily: fonts.sans.semibold }}>Codex Preferences</Text>
+              <TouchableOpacity
+                onPress={() => {
+                  void Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
+                  onClose();
+                }}
+                activeOpacity={0.7}
+                style={{ width: 32, height: 32, borderRadius: 16, backgroundColor: colors.bg.base, alignItems: "center", justifyContent: "center" }}
+              >
+                <X size={18} color={colors.fg.default} strokeWidth={2} />
+              </TouchableOpacity>
+            </View>
+
+            <ScrollView
+              style={{ flex: 1, marginBottom: 20 }}
+              contentContainerStyle={{ paddingHorizontal: 14, paddingBottom: 18, gap: 12 }}
+              keyboardDismissMode="on-drag"
+            >
+              <View style={{ gap: 6 }}>
+                <Text style={{ color: colors.fg.muted, fontSize: 12, fontFamily: fonts.sans.semibold, paddingHorizontal: 2 }}>
+                  Reasoning
+                </Text>
+                {reasoningOptions.map((option) => {
+                  const selected = option.id === selectedReasoningEffort;
+                  return (
+                    <TouchableOpacity
+                      key={option.id}
+                      style={[
+                        styles.sheetRow,
+                        {
+                          backgroundColor: selected ? colors.bg.base : colors.bg.raised,
+                          borderRadius: 10,
+                        },
+                      ]}
+                      onPress={() => onSelectReasoningEffort(option.id)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: colors.fg.default, fontSize: 14, fontFamily: fonts.sans.medium }}>
+                          {option.label}
+                        </Text>
+                        <Text style={{ color: colors.fg.muted, fontSize: 11, fontFamily: fonts.sans.regular, marginTop: 2 }}>
+                          {option.description}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+
+              <View style={{ gap: 6 }}>
+                <Text style={{ color: colors.fg.muted, fontSize: 12, fontFamily: fonts.sans.semibold, paddingHorizontal: 2 }}>
+                  Speed
+                </Text>
+                {speedOptions.map((option) => {
+                  const selected = option.id === selectedSpeed;
+                  return (
+                    <TouchableOpacity
+                      key={option.id}
+                      style={[
+                        styles.sheetRow,
+                        {
+                          backgroundColor: selected ? colors.bg.base : colors.bg.raised,
+                          borderRadius: 10,
+                        },
+                      ]}
+                      onPress={() => onSelectSpeed(option.id)}
+                      activeOpacity={0.7}
+                    >
+                      <View style={{ flex: 1 }}>
+                        <Text style={{ color: colors.fg.default, fontSize: 14, fontFamily: fonts.sans.medium }}>
+                          {option.label}
+                        </Text>
+                        <Text style={{ color: colors.fg.muted, fontSize: 11, fontFamily: fonts.sans.regular, marginTop: 2 }}>
+                          {option.description}
+                        </Text>
+                      </View>
+                    </TouchableOpacity>
+                  );
+                })}
+              </View>
+            </ScrollView>
+          </Animated.View>
+        </View>
+      </GestureHandlerRootView>
+    </Modal>
+  );
+}
+
 const AnimatedAITab = memo(
   ({
     tab,
@@ -1841,6 +2028,8 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
     opencode: "",
     codex: "",
   });
+  const [codexReasoningEffort, setCodexReasoningEffort] = useState<NonNullable<CodexPromptOptions["reasoningEffort"]>>("medium");
+  const [codexSpeed, setCodexSpeed] = useState<NonNullable<CodexPromptOptions["speed"]>>("balanced");
   const [providersByBackend, setProvidersByBackend] = useState<Record<AiBackend, AIProvider[]>>({
     opencode: [],
     codex: [],
@@ -2307,6 +2496,25 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
     }
   }, [status, sessionState]);
 
+  const refreshSessionMessages = useCallback(async (sessionId: string, backend: AiBackend, force = false) => {
+    try {
+      setLoadingSessionId(sessionId);
+      const msgs = await ai.getMessages(sessionId, backend);
+      if (!Array.isArray(msgs)) return;
+      setMessagesMap((prev) => {
+        const next = msgs as AIMessage[];
+        if (!force && sameMessagesShape(prev[sessionId], next)) {
+          return prev;
+        }
+        return { ...prev, [sessionId]: next };
+      });
+    } catch {
+      // best effort refresh
+    } finally {
+      setLoadingSessionId((prev) => (prev === sessionId ? null : prev));
+    }
+  }, [ai]);
+
   useEffect(() => {
     if (status !== "connected" || !isInitialized || !isActive || drawerStatus !== "open") return;
 
@@ -2382,6 +2590,9 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
 const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.name
     || (activeBackend === "codex" ? "Auto" : "Select model");
   const selectedModelName = selectedModelNameFull.length > 12 ? selectedModelNameFull.slice(0, 12) + "…" : selectedModelNameFull;
+  const codexPrefsLabel = activeBackend !== "codex"
+    ? ""
+    : `${codexReasoningEffort[0].toUpperCase()}${codexReasoningEffort.slice(1)} · ${codexSpeed[0].toUpperCase()}${codexSpeed.slice(1)}`;
   const selectedAgentNameFull = activeBackend === "codex" && agents.length === 0
     ? ""
     : ((agents.find((a) => a.id === selectedAgent)?.name || selectedAgent) as string);
@@ -2531,25 +2742,6 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
     }
   }, [tabs, messagesMap, ai]);
 
-  const refreshSessionMessages = useCallback(async (sessionId: string, backend: AiBackend, force = false) => {
-    try {
-      setLoadingSessionId(sessionId);
-      const msgs = await ai.getMessages(sessionId, backend);
-      if (!Array.isArray(msgs)) return;
-      setMessagesMap((prev) => {
-        const next = msgs as AIMessage[];
-        if (!force && sameMessagesShape(prev[sessionId], next)) {
-          return prev;
-        }
-        return { ...prev, [sessionId]: next };
-      });
-    } catch {
-      // best effort refresh
-    } finally {
-      setLoadingSessionId((prev) => (prev === sessionId ? null : prev));
-    }
-  }, [ai]);
-
   useEffect(() => {
     refreshSessionMessagesRef.current = refreshSessionMessages;
   }, [refreshSessionMessages]);
@@ -2560,6 +2752,14 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
     const [providerID, modelID] = selectedModel.split(":");
     return { providerID, modelID };
   }, [selectedModel]);
+
+  const getCodexPromptOptions = useCallback((): CodexPromptOptions | undefined => {
+    if (activeBackend !== "codex") return undefined;
+    return {
+      reasoningEffort: codexReasoningEffort,
+      speed: codexSpeed,
+    };
+  }, [activeBackend, codexReasoningEffort, codexSpeed]);
 
   // Permission reply
   const handlePermissionReply = async (response: PermissionResponse) => {
@@ -2748,7 +2948,15 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
             await ai.runCommand(sessId, "init", activeBackend);
             break;
           default:
-            await ai.sendPrompt(sessId, text, getModelRef(), selectedAgentForBackend, activeBackend);
+            await ai.sendPrompt(
+              sessId,
+              text,
+              getModelRef(),
+              selectedAgentForBackend,
+              activeBackend,
+              undefined,
+              getCodexPromptOptions(),
+            );
             setSessionActivityLabels((prev) => ({ ...prev, [sessId]: "Thinking..." }));
             setIsStreaming(true);
             setStreamingSessionId(sessId);
@@ -2804,6 +3012,7 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
         selectedAgentForBackend,
         activeBackend,
         pendingImage ? [pendingImage] : undefined,
+        getCodexPromptOptions(),
       );
       setMessagesMap((prev) => {
         const sessionMessages = prev[sessId!] || [];
@@ -3465,6 +3674,22 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
                     <ChevronDown size={13} color={colors.fg.subtle} />
                   </TouchableOpacity>
 
+                  {activeBackend === "codex" ? (
+                    <TouchableOpacity
+                      style={[styles.modelButton, { borderColor: colors.border.secondary, maxWidth: 220 }]}
+                      onPress={() => setActiveSheet("codex-preferences")}
+                      activeOpacity={0.7}
+                    >
+                      <Text
+                        numberOfLines={1}
+                        style={[styles.modelText, { color: colors.fg.default, fontFamily: fonts.sans.regular }]}
+                      >
+                        {codexPrefsLabel}
+                      </Text>
+                      <ChevronDown size={13} color={colors.fg.subtle} />
+                    </TouchableOpacity>
+                  ) : null}
+
                   <View style={{ flex: 1 }} />
 
                   <TouchableOpacity
@@ -3644,7 +3869,7 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
             )}
 
             <ConfigureSheet
-              visible={activeSheet !== null}
+              visible={activeSheet === "configure"}
               backend={activeBackend}
               modeOptions={agents.map((a) => ({ id: a.id, name: a.name }))}
               selectedModeId={selectedAgent}
@@ -3656,6 +3881,18 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
               onSelectModel={(id) => {
                 setSelectedModelByBackend((prev) => ({ ...prev, [activeBackend]: id }));
               }}
+              onClose={() => setActiveSheet(null)}
+              colors={colors}
+              radius={radius}
+              fonts={fonts}
+            />
+
+            <CodexPreferencesSheet
+              visible={activeSheet === "codex-preferences"}
+              selectedReasoningEffort={codexReasoningEffort}
+              selectedSpeed={codexSpeed}
+              onSelectReasoningEffort={(value) => setCodexReasoningEffort(value)}
+              onSelectSpeed={(value) => setCodexSpeed(value)}
               onClose={() => setActiveSheet(null)}
               colors={colors}
               radius={radius}

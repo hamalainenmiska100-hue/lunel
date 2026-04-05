@@ -9,6 +9,7 @@ import { createInterface } from "readline";
 import type {
   AIProvider,
   AiEventEmitter,
+  CodexPromptOptions,
   FileAttachment,
   ModelSelector,
   MessageInfo,
@@ -272,6 +273,7 @@ export class CodexProvider implements AIProvider {
     model?: ModelSelector,
     agent?: string,
     files: FileAttachment[] = [],
+    codexOptions?: CodexPromptOptions,
   ): Promise<{ ack: true }> {
     const session = this.ensureLocalSession(sessionId);
     session.updatedAt = Date.now();
@@ -282,11 +284,28 @@ export class CodexProvider implements AIProvider {
         let imageUrlKey: "url" | "image_url" = "url";
         while (true) {
           try {
+            const effortLevels: Array<NonNullable<CodexPromptOptions["reasoningEffort"]>> = ["low", "medium", "high"];
+            const speedDelta: Record<NonNullable<CodexPromptOptions["speed"]>, number> = {
+              fast: -1,
+              balanced: 0,
+              quality: 1,
+            };
+            const baseEffort = codexOptions?.reasoningEffort ?? "medium";
+            const baseIndex = effortLevels.indexOf(baseEffort);
+            const adjustedIndex = Math.max(
+              0,
+              Math.min(
+                effortLevels.length - 1,
+                baseIndex + (codexOptions?.speed ? speedDelta[codexOptions.speed] : 0),
+              ),
+            );
+            const reasoningEffort = effortLevels[adjustedIndex];
             await this.call("turn/start", {
               threadId: session.id,
               input: this.makeTurnInputPayload(text, files, imageUrlKey),
               ...(model ? { model: model.providerID === "codex" ? model.modelID : `${model.providerID}/${model.modelID}` } : {}),
               ...(agent ? { agent } : {}),
+              ...(reasoningEffort ? { reasoningEffort } : {}),
             });
             break;
           } catch (err) {

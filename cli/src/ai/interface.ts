@@ -14,6 +14,11 @@ export interface ModelSelector {
   modelID: string;
 }
 
+export interface CodexPromptOptions {
+  reasoningEffort?: "low" | "medium" | "high";
+  speed?: "fast" | "balanced" | "quality";
+}
+
 export interface FileAttachment {
   type: "file";
   mime: string;
@@ -78,6 +83,7 @@ export interface AIProvider {
     model?: ModelSelector,
     agent?: string,
     files?: FileAttachment[],
+    codexOptions?: CodexPromptOptions,
   ): Promise<{ ack: true }>;
   abort(sessionId: string): Promise<Record<string, never>>;
 

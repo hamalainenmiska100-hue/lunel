@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef } from 'react';
 import { useConnection, Message } from '../contexts/ConnectionContext';
-import type { AiBackend, AIEvent, AISession, AIMessage, AIAgent, AIProvider, ModelRef, PermissionResponse, AIFileAttachment } from '../plugins/core/ai/types';
+import type { AiBackend, AIEvent, AISession, AIMessage, AIAgent, AIProvider, ModelRef, PermissionResponse, AIFileAttachment, CodexPromptOptions } from '../plugins/core/ai/types';
 
 export interface AIEvents {
   onEvent?: (event: AIEvent) => void;
@@ -69,8 +69,16 @@ export function useAI(events?: AIEvents) {
   }, [sendData]);
 
   // Prompting
-  const sendPrompt = useCallback(async (sessionId: string, text: string, model?: ModelRef, agent?: string, backend: AiBackend = 'opencode', files?: AIFileAttachment[]): Promise<void> => {
-    const response = await sendData('ai', 'prompt', { sessionId, text, model, agent, backend, files });
+  const sendPrompt = useCallback(async (
+    sessionId: string,
+    text: string,
+    model?: ModelRef,
+    agent?: string,
+    backend: AiBackend = 'opencode',
+    files?: AIFileAttachment[],
+    codexOptions?: CodexPromptOptions,
+  ): Promise<void> => {
+    const response = await sendData('ai', 'prompt', { sessionId, text, model, agent, backend, files, codexOptions });
     if (!response.ok) throw new Error(response.error?.message || 'Failed to send prompt');
   }, [sendData]);
 

@@ -20,6 +20,11 @@ export interface ModelRef {
   modelID: string;
 }
 
+export interface CodexPromptOptions {
+  reasoningEffort?: "low" | "medium" | "high";
+  speed?: "fast" | "balanced" | "quality";
+}
+
 export interface AIFileAttachment {
   type: "file";
   mime: string;

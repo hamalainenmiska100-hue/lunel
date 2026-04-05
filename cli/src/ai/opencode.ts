@@ -6,6 +6,7 @@ import { createOpencodeServer, createOpencodeClient } from "@opencode-ai/sdk";
 import type {
   AIProvider,
   AiEventEmitter,
+  CodexPromptOptions,
   FileAttachment,
   ModelSelector,
   MessageInfo,
@@ -181,7 +182,9 @@ export class OpenCodeProvider implements AIProvider {
     model?: ModelSelector,
     agent?: string,
     files: FileAttachment[] = [],
+    codexOptions?: CodexPromptOptions,
   ): Promise<{ ack: true }> {
+    void codexOptions;
     if (sessionId) this.lastActiveSessionId = sessionId;
 
     if (VERBOSE_AI_LOGS) {
