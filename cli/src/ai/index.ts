@@ -2,7 +2,7 @@
 // by the `backend` field in each request. Backends that fail to init are
 // skipped gracefully; the available list is exposed to the app.
 
-import type { AIProvider, AiEvent, AiEventEmitter, ModelSelector, FileAttachment } from "./interface.js";
+import type { AIProvider, AiEvent, AiEventEmitter, ModelSelector, FileAttachment, CodexPromptOptions } from "./interface.js";
 
 export type AiBackend = "opencode" | "codex";
 const DEBUG_MODE = process.env.LUNEL_DEBUG === "1" || process.env.LUNEL_DEBUG_AI === "1";
@@ -91,9 +91,17 @@ export class AiManager {
   deleteSession(backend: AiBackend, id: string) { return this.get(backend).deleteSession(id); }
   getMessages(backend: AiBackend, sessionId: string) { return this.get(backend).getMessages(sessionId); }
 
-  prompt(backend: AiBackend, sessionId: string, text: string, model?: ModelSelector, agent?: string, files?: FileAttachment[]) {
+  prompt(
+    backend: AiBackend,
+    sessionId: string,
+    text: string,
+    model?: ModelSelector,
+    agent?: string,
+    files?: FileAttachment[],
+    codexOptions?: CodexPromptOptions,
+  ) {
     this.get(backend).setActiveSession?.(sessionId);
-    return this.get(backend).prompt(sessionId, text, model, agent, files);
+    return this.get(backend).prompt(sessionId, text, model, agent, files, codexOptions);
   }
 
   abort(backend: AiBackend, sessionId: string) { return this.get(backend).abort(sessionId); }
