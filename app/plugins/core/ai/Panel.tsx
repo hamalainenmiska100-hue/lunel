@@ -1930,6 +1930,10 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
   const lastContentHeightRef = useRef(0);
   const scrollFrameRef = useRef<number | null>(null);
   const scrollCorrectionFrameRef = useRef<number | null>(null);
+  const refreshSessionMessagesRef = useRef<(sessionId: string, backend: AiBackend, force?: boolean) => Promise<void>>(
+    async () => {}
+  );
+  const codexFinalSyncInFlightRef = useRef<Set<string>>(new Set());
   const clearScheduledScroll = useCallback(() => {
     if (scrollFrameRef.current != null) {
       cancelAnimationFrame(scrollFrameRef.current);
@@ -2125,9 +2129,18 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
         }
         case "session.idle": {
           const sessId = (props.sessionID as string) || (props.sessionId as string);
+          const backend = (event.backend ?? "opencode") as AiBackend;
           setIsStreaming(false);
           if (sessId) {
             setSessionActivityLabels((prev) => ({ ...prev, [sessId]: "Done" }));
+            // Codex streams partial deltas; after completion force a canonical
+            // re-read so final rendering is clean and fully normalized.
+            if (backend === "codex" && !codexFinalSyncInFlightRef.current.has(sessId)) {
+              codexFinalSyncInFlightRef.current.add(sessId);
+              void refreshSessionMessagesRef.current(sessId, "codex", true).finally(() => {
+                codexFinalSyncInFlightRef.current.delete(sessId);
+              });
+            }
           }
           break;
         }
@@ -2556,6 +2569,10 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
       setLoadingSessionId((prev) => (prev === sessionId ? null : prev));
     }
   }, [ai]);
+
+  useEffect(() => {
+    refreshSessionMessagesRef.current = refreshSessionMessages;
+  }, [refreshSessionMessages]);
 
   // Get selected model ref
   const getModelRef = useCallback((): ModelRef | undefined => {
