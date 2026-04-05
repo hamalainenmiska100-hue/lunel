@@ -1869,16 +1869,36 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
   const contentHeightRef = useRef(0);
   const listViewportHeightRef = useRef(0);
   const lastContentHeightRef = useRef(0);
-  const scrollToLatest = useCallback((animated: boolean) => {
-    requestAnimationFrame(() => {
-      messagesListRef.current?.scrollToEnd({ animated });
-      // Snap once more on the next frame to avoid landing slightly above bottom
-      // when content size updates after the first scroll call.
-      requestAnimationFrame(() => {
-        messagesListRef.current?.scrollToEnd({ animated });
+  const scrollFrameRef = useRef<number | null>(null);
+  const scrollCorrectionFrameRef = useRef<number | null>(null);
+  const clearScheduledScroll = useCallback(() => {
+    if (scrollFrameRef.current != null) {
+      cancelAnimationFrame(scrollFrameRef.current);
+      scrollFrameRef.current = null;
+    }
+    if (scrollCorrectionFrameRef.current != null) {
+      cancelAnimationFrame(scrollCorrectionFrameRef.current);
+      scrollCorrectionFrameRef.current = null;
+    }
+  }, []);
+  const getBottomScrollOffset = useCallback(() => {
+    const viewportHeight = listViewportHeightRef.current;
+    return Math.max(0, contentHeightRef.current - viewportHeight);
+  }, []);
+  const scrollToLatest = useCallback((animated: boolean, correctAfterScroll = false) => {
+    clearScheduledScroll();
+    scrollFrameRef.current = requestAnimationFrame(() => {
+      scrollFrameRef.current = null;
+      const offset = getBottomScrollOffset();
+      messagesListRef.current?.scrollToOffset({ offset, animated });
+      if (!correctAfterScroll) return;
+      // Correct any late list re-measure without kicking off a second animation.
+      scrollCorrectionFrameRef.current = requestAnimationFrame(() => {
+        scrollCorrectionFrameRef.current = null;
+        messagesListRef.current?.scrollToOffset({ offset: getBottomScrollOffset(), animated: false });
       });
     });
-  }, []);
+  }, [clearScheduledScroll, getBottomScrollOffset]);
   const tabs = useMemo(() => sortTabsByUpdatedAt([...sessionTabs, ...draftTabs]), [sessionTabs, draftTabs]);
   const activeSessionId = useMemo(() => {
     return tabs.find((t) => t.id === activeTabId)?.sessionId || null;
@@ -2692,7 +2712,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
         ...prev,
         [sessId!]: [...(prev[sessId!] || []), optimisticMsg],
       }));
-      scrollToLatest(true);
+      scrollToLatest(true, true);
 
       await ai.sendPrompt(
         sessId,
@@ -2842,6 +2862,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
 
   useEffect(() => {
     return () => {
+      clearScheduledScroll();
       if (voiceWaveIntervalRef.current) {
         clearInterval(voiceWaveIntervalRef.current);
         voiceWaveIntervalRef.current = null;
@@ -2851,7 +2872,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
         recordingRef.current = null;
       }
     };
-  }, []);
+  }, [clearScheduledScroll]);
 
   // Stop streaming
   const handleStop = async () => {
@@ -3153,7 +3174,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
                   contentHeightRef.current = contentHeight;
                   const grew = contentHeight > lastContentHeightRef.current;
                   if (grew && isStreaming && isNearBottomRef.current) {
-                    scrollToLatest(true);
+                    scrollToLatest(false);
                   }
                   lastContentHeightRef.current = contentHeight;
                 }}
@@ -3398,7 +3419,7 @@ export default function AIPanel({ instanceId, isActive, bottomBarHeight }: Plugi
                     autoFollowRef.current = isStreaming;
                     isNearBottomRef.current = true;
                     setShowScrollToBottom(false);
-                    scrollToLatest(true);
+                    scrollToLatest(true, false);
                   }}
                   hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
                   pointerEvents="box-only"
