@@ -963,6 +963,14 @@ function GitPanel({ instanceId, isActive }: PluginPanelProps) {
           )}
         </ScrollView>
       ) : activeTab === 'branches' && branches ? (
+        branches.branches.length === 0 ? (
+          <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', padding: spacing[6] }}>
+            <GitBranch size={40} color={colors.fg.subtle} strokeWidth={1.5} />
+            <Text style={{ fontSize: typography.body, fontFamily: fonts.sans.medium, color: colors.fg.muted, marginTop: spacing[3], textAlign: 'center' }}>
+              No branches found
+            </Text>
+          </View>
+        ) : (
         <ScrollView
           style={{ flex: 1 }}
           contentContainerStyle={{ padding: pad, paddingTop: spacing[2] }}
@@ -1011,6 +1019,7 @@ function GitPanel({ instanceId, isActive }: PluginPanelProps) {
             );
           })}
         </ScrollView>
+        )
       ) : null}
 
       {/* ── Branch & Sync Bar ──────────────────────────────────── */}
@@ -1018,6 +1027,7 @@ function GitPanel({ instanceId, isActive }: PluginPanelProps) {
         <View style={{
           borderTopWidth: 0.5,
           borderTopColor: colors.border.secondary,
+          marginTop: 'auto',
         }}>
           {showCommitBar ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing[3], paddingVertical: 6, gap: spacing[2] }}>
@@ -1103,23 +1113,23 @@ function GitPanel({ instanceId, isActive }: PluginPanelProps) {
               {activeTab === 'branches' ? (
                 <TouchableOpacity
                   onPress={() => setShowNewBranchModal(true)}
-                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 10, height: 32, borderRadius: 10, backgroundColor: colors.git.added + '18' }}
+                  style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 10, height: 32, borderRadius: 8, backgroundColor: colors.git.added + '18' }}
                 >
                   <Plus size={13} color={colors.git.added} strokeWidth={2} />
                   <Text style={{ fontSize: 13, fontFamily: fonts.sans.medium, color: colors.git.added }}>New Branch</Text>
                 </TouchableOpacity>
               ) : (
                 <>
-                  <TouchableOpacity onPress={handlePullLongPress} disabled={pullLoading || pushLoading} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, width: 72, height: 32, borderRadius: 10, backgroundColor: colors.git.info + '18' }}>
+                  <TouchableOpacity onPress={handlePullLongPress} disabled={pullLoading || pushLoading} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, width: 72, height: 32, borderRadius: 8, backgroundColor: colors.git.info + '18' }}>
                     {pullLoading ? <SpinnerIcon size={13} color={colors.git.info} /> : <><ArrowDown size={13} color={colors.git.info} strokeWidth={2} /><Text style={{ fontSize: 13, fontFamily: fonts.sans.medium, color: colors.git.info }}>Pull</Text></>}
                   </TouchableOpacity>
                   {gitStatus.staged.length > 0 ? (
-                    <TouchableOpacity onPress={() => { dismissGitInputs(); setShowCommitBar(true); }} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 14, height: 32, borderRadius: 10, backgroundColor: colors.git.modified + '18' }}>
+                    <TouchableOpacity onPress={() => { dismissGitInputs(); setShowCommitBar(true); }} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, paddingHorizontal: 14, height: 32, borderRadius: 8, backgroundColor: colors.git.modified + '18' }}>
                       <GitCommitIcon size={13} color={colors.git.modified} strokeWidth={2} />
                       <Text style={{ fontSize: 13, fontFamily: fonts.sans.medium, color: colors.git.modified }}>Commit</Text>
                     </TouchableOpacity>
                   ) : (
-                    <TouchableOpacity onPress={handlePushLongPress} disabled={pushLoading || gitStatus.ahead === 0} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, width: 72, height: 32, borderRadius: 10, backgroundColor: colors.git.added + '18', opacity: gitStatus.ahead === 0 ? 0.4 : 1 }}>
+                    <TouchableOpacity onPress={handlePushLongPress} disabled={pushLoading || gitStatus.ahead === 0} style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 5, width: 72, height: 32, borderRadius: 8, backgroundColor: colors.git.added + '18', opacity: gitStatus.ahead === 0 ? 0.4 : 1 }}>
                       {pushLoading ? <SpinnerIcon size={13} color={colors.git.added} /> : <><ArrowUp size={13} color={gitStatus.ahead > 0 ? colors.git.added : colors.fg.muted} strokeWidth={2} /><Text style={{ fontSize: 13, fontFamily: fonts.sans.medium, color: gitStatus.ahead > 0 ? colors.git.added : colors.fg.muted }}>Push</Text></>}
                     </TouchableOpacity>
                   )}
