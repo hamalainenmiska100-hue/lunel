@@ -57,6 +57,7 @@ import Svg, { Path } from "react-native-svg";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import { MenuView } from "@react-native-menu/menu";
 import { useDrawerStatus } from "@react-navigation/drawer";
+import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { innerApi } from "../../innerApi";
 import { PluginPanelProps } from "../../types";
 const { height: SCREEN_HEIGHT, width: SCREEN_WIDTH } = Dimensions.get("window");
@@ -1998,6 +1999,7 @@ const AnimatedAITab = memo(
 
 export default function AIPanel({ instanceId, isActive, bottomBarHeight }: PluginPanelProps) {
   const { colors, radius, fonts } = useTheme();
+  const insets = useSafeAreaInsets();
   const { settings } = useAppSettings();
   const headerHeight = usePluginHeaderHeight();
   const { status, sessionState } = useConnection();
@@ -3307,7 +3309,8 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
   }, [activeTab, closeTab]);
 
   const hasContent = listData.length > 0;
-  const messagesBottomInset = 16;
+  const composerSafeBottom = Math.max(insets.bottom, 8);
+  const messagesBottomInset = composerHeight + composerSafeBottom + 28;
 
   useEffect(() => {
     if (!hasContent) return;
@@ -3486,7 +3489,7 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
                   listViewportHeightRef.current = e.nativeEvent.layout.height;
                 }}
                 contentContainerStyle={{
-                  paddingHorizontal: 16,
+                  paddingHorizontal: 18,
                   paddingTop: headerHeight + 18,
                   paddingBottom: messagesBottomInset,
                 }}
@@ -3544,7 +3547,7 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
             {/* Composer */}
             <LinearGradient
               colors={[colors.bg.base + "1a", colors.bg.base + "ff"]}
-              style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: composerHeight + 24 }}
+              style={{ position: "absolute", bottom: 0, left: 0, right: 0, height: composerHeight + composerSafeBottom + 26 }}
               pointerEvents="none"
             />
             <GestureDetector gesture={swipeDownGesture}>
@@ -3558,6 +3561,7 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
                   borderRadius: 12,
                   borderCurve: 'continuous',
                   opacity: isVoiceMode ? 0 : 1,
+                  marginBottom: composerSafeBottom,
                 },
               ]}
               onLayout={(e) => {
@@ -3746,6 +3750,7 @@ const selectedModelNameFull = modelOptions.find((m) => m.id === selectedModel)?.
                   left: 0,
                   right: 0,
                   bottom: isVoiceMode ? 68 : composerHeight + 18,
+                  marginBottom: composerSafeBottom,
                   alignItems: "center",
                   zIndex: 100,
                 }}
@@ -4112,13 +4117,13 @@ const styles = StyleSheet.create({
   composerBottomBar: {
     position: "relative",
     minHeight: 30,
-    marginTop: 10,
+    marginTop: 12,
     paddingLeft: 0,
   },
   composerRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: 10,
   },
   composerStatusText: {
     marginTop: 8,
@@ -4166,12 +4171,17 @@ const styles = StyleSheet.create({
 
   // Input styles
   inputContainer: {
-    marginHorizontal: 8,
-    marginBottom: 8,
-    paddingHorizontal: 10,
+    marginHorizontal: 10,
+    marginBottom: 0,
+    paddingHorizontal: 12,
     paddingTop: 14,
     paddingBottom: 14,
     borderWidth: StyleSheet.hairlineWidth,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.08,
+    shadowRadius: 18,
+    elevation: 3,
   },
   inputWrapper: {
     alignItems: "stretch",
@@ -4205,10 +4215,11 @@ const styles = StyleSheet.create({
     paddingBottom: 8,
   },
   input: {
-    fontSize: 14,
-    paddingVertical: 6,
+    fontSize: 15,
+    paddingVertical: 8,
     paddingHorizontal: 10,
     maxHeight: 160,
+    lineHeight: 22,
   },
   voicePreview: {
     minHeight: 52,
